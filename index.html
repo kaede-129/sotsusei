@@ -5,11 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Three.js GLTF Viewer</title>
     <style>
+        .menu {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+/* 三本線のボタン */
+.menu-btn {
+    width: 50px;
+    height: 50px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+}
+
+.menu-btn span {
+    width: 22px;
+    height: 2px;
+    background: #333;
+    transition: 0.3s;
+}
+
+/* メニューの中身 */
+.menu-list {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+
+    position: absolute;
+    top: 60px;
+    right: 0;
+
+    width: 150px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px #0002;
+}
+
+.menu-list a {
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+/* 開いたとき */
+.menu-list.active {
+    display: flex;
+}
         body {
             margin: 0;
             padding: 0;
             overflow: hidden; /* スクロールバーを非表示にする */
-            background-color: #1a1a1a;
+            background :linear-gradient(
+                to bottom,
+                #91c9f5 0%,
+                #d8eaff 55%,
+                #f0caee 100%
+            );
         }
         #canvas-container {
             width: 100vw;
@@ -39,11 +101,32 @@
     </script>
 </head>
 <body>
+    <div class="menu">
+    <button id="menu-btn" class="menu-btn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <nav id="menu-list" class="menu-list">
+        <a href="#home">HOME</a>
+        <a href="#about">ABOUT</a>
+        <a href="#works">WORKS</a>
+    </nav>
+</div>
 
     <div id="loading">モデルを読み込み中...</div>
     <div id="canvas-container"></div>
 
     <script type="module">
+        const menuBtn = document.getElementById("menu-btn");
+        const menuList = document.getElementById("menu-list");
+
+        menuBtn.addEventListener("click", () => {
+            menuList.classList.toggle("active");
+        });
+
+
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -51,24 +134,28 @@
         // --- 1. 基本設定（シーン、カメラ、レンダラー） ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a1a); // 背景色をダークグレーに設定
+        scene.background = scene.background = null;
 
         // パースペクティブカメラの設定（画角、アスペクト比、ニア・ファープレーン）
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 15, 25); // カメラの初期位置（少し上から見下ろす）
 
         // WebGLレンダラーの設定
-        const renderer = new THREE.WebGLRenderer({ antialias: true }); // アンチエイリアスを有効化
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true
+         }); // アンチエイリアスを有効化
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Retinaディスプレイ等の解像度対策（上限2）
         renderer.shadowMap.enabled = true; // シャドウ（影）の描画を有効化
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping; // リアルな色合いにするためのトーンマッピング
         renderer.toneMappingExposure = 1.0;
         container.appendChild(renderer.domElement);
 
         // --- 2. ライト（照明）の設定 ---
         // 環境光（全体を均等に照らす）
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         scene.add(ambientLight);
 
         // 平行光源（太陽光のような直進する光）
@@ -85,6 +172,10 @@
         dirLight.shadow.camera.top = d;
         dirLight.shadow.camera.bottom = -d;
         scene.add(dirLight);
+
+        dirLight.shadow.bias = -0.0001;
+        dirLight.shadow.normalBias = 0.02;
+        dirLight.shadow.mapSize.set(2048, 2048);
 
         // --- 3. コントロール（マウス操作） ---
         const controls = new OrbitControls(camera, renderer.domElement);
@@ -103,16 +194,23 @@
             modelUrl,
             (gltf) => {
                 const model = gltf.scene;
-                
-                // モデル内のすべてのメッシュに対して影の設定を適用
+
+                // モデル内のメッシュの影を設定
                 model.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
                         child.receiveShadow = true;
-                        
-                        // マテリアルの調整（水や地形の質感をきれいに見せるため）
+
                         if (child.material) {
                             child.material.depthWrite = true;
+                        }
+
+                        // 名前に「ラグ」が含まれるオブジェクトは影を受けない
+                        if (child.name.includes("Circle")) {
+                            child.receiveShadow = false;
+                        }
+                        if (child.name.includes("BézierCurve")) {
+                            child.receiveShadow = false;
                         }
                     }
                 });
