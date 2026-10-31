@@ -129,6 +129,7 @@
 
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         // --- 1. 基本設定（シーン、カメラ、レンダラー） ---
@@ -184,11 +185,18 @@
         controls.maxPolarAngle = Math.PI / 2 - 0.05; // 地面以下にカメラが潜らないように制限
 
         // --- 4. GLTFモデルの読み込み ---
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath(
+            'https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/'
+        );
+
         const loader = new GLTFLoader();
+        loader.setDRACOLoader(dracoLoader);
+
         const loadingEl = document.getElementById('loading');
 
         // ※ `TerrainWater01.glb` はこのHTMLファイルと同じディレクトリに配置してください
-        const modelUrl = './tableset.glb'; 
+        const modelUrl = './tableset_compressed.glb'; 
 
         loader.load(
             modelUrl,
