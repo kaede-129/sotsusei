@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 // =========================
 // 1. 基本設定
@@ -120,6 +121,22 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 
 container.appendChild(renderer.domElement);
+
+// =========================
+// 環境反射の設定
+// =========================
+
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+
+const environment = new RoomEnvironment();
+
+const envMap = pmremGenerator.fromScene(environment).texture;
+
+// シーンに環境反射を設定
+scene.environment = envMap;
+
+// PMREMGeneratorを解放
+pmremGenerator.dispose();
 
 
 // =========================
@@ -554,6 +571,22 @@ loader.load(
     chestUrl,
     (gltf) => {
         treasure = gltf.scene;
+
+        // 宝箱の光沢を調整
+        treasure.traverse((child) => {
+            if (child.isMesh) {
+
+                const materials = Array.isArray(child.material)
+                    ? child.material
+                    : [child.material];
+
+                materials.forEach((material) => {
+                    if (material.isMeshStandardMaterial) {
+                        material.envMapIntensity = 1.3;
+                    }
+                });
+            }
+        });
 
         // 宝箱を小さくする
         treasure.scale.setScalar(2);
