@@ -192,6 +192,12 @@ const loader = new GLTFLoader();
 loader.setDRACOLoader(dracoLoader);
 
 const loadingEl = document.getElementById("loading");
+const loadingProgressEl = document.getElementById("loading-progress");
+
+// ゲージを更新する関数
+function updateLoadingProgress(percent) {
+    loadingProgressEl.style.width = `${percent}%`;
+}
 
 // ファイル名
 const chestUrl = "./box.glb";
@@ -633,6 +639,7 @@ loader.load(
         // 宝箱のアニメーション終了後に表示する
 
         modelLoaded = true;
+        updateLoadingProgress(100);
 
         startTreasureAnimation();
     },
@@ -643,7 +650,7 @@ loader.load(
                 (xhr.loaded / xhr.total) * 100
             );
 
-            loadingEl.innerText = "Loading...";
+            updateLoadingProgress(percent);
         }
     },
 
