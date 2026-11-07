@@ -218,7 +218,7 @@ function updateLoadingProgress(percent) {
 
 // ファイル名
 const chestUrl = "./box.glb";
-const modelUrl = "./tableset_compressed.glb";
+const modelUrl = "./last_compressed.glb";
 
 // アニメーション用の変数
 let treasure = null;
@@ -582,7 +582,7 @@ loader.load(
 
                 materials.forEach((material) => {
                     if (material.isMeshStandardMaterial) {
-                        material.envMapIntensity = 1.3;
+                        material.envMapIntensity = 0.3;
                     }
                 });
             }
