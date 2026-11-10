@@ -111,7 +111,7 @@ renderer.setClearAlpha(0);
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio, 2)
+    Math.min(window.devicePixelRatio, 1.5)
 );
 
 renderer.shadowMap.enabled = true;
